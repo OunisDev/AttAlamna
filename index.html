@@ -164,6 +164,13 @@
         <h3>تسجيل الدخول</h3>
         <div class="row">
             <div class="col">
+                <h4>Teacher (بدون كلمة مرور)</h4>
+                <select id="teacher-select"></select>
+                <select id="teacher-class-select"></select>
+                <button onclick="loginTeacher()">دخول Teacher</button>
+            </div>
+            <hr>
+            <div class="col">
                 <h4>Admin</h4>
                 <input id="admin-pass" placeholder="كلمة مرور Admin" type="password">
                 <button onclick="loginAdmin()">دخول Admin</button>
@@ -173,12 +180,7 @@
                 <input id="staff-pass" placeholder="كلمة مرور Staff" type="password">
                 <button onclick="loginStaff()">دخول Staff</button>
             </div>
-            <div class="col">
-                <h4>Teacher (بدون كلمة مرور)</h4>
-                <select id="teacher-select"></select>
-                <select id="teacher-class-select"></select>
-                <button onclick="loginTeacher()">دخول Teacher</button>
-            </div>
+
         </div>
     </div>
 
