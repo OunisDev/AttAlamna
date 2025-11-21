@@ -39,8 +39,7 @@
 
         input,
         select,
-        button,
-        textarea {
+        button {
             padding: 8px;
             margin: 6px 0;
             width: 25%;
@@ -72,38 +71,20 @@
             box-shadow: 0 0 5px #ccc;
         }
 
-        .row {
-            display: flex;
-            flex-direction: column;
-            /* عمودي دائمًا */
-            gap: 20px;
-            /* مسافة بين الأقسام */
-            width: 100%;
-            max-width: 450px;
-            /* عرض مناسب للشاشة */
-            margin: 20px auto;
-            /* توسيط الصفحة */
-        }
 
-        .row .col {
-            background: #f2f2f2;
-            padding: 18px;
-            border-radius: 12px;
-            box-shadow: 0 0 8px rgba(0, 0, 0, 0.15);
-            text-align: center;
-        }
+
+
 
         .row .col h4 {
             margin-bottom: 12px;
         }
 
         textarea {
-            width: 100%;
-            padding: 10px;
-            margin: 8px 0;
+            width: 80%;
+
             border-radius: 8px;
             border: 1px solid #aaa;
-            font-size: 16px;
+            font-size: 12px;
         }
 
         button {
@@ -126,7 +107,7 @@
         td,
         th {
             border: 1px solid #eee;
-            padding: 6px;
+            /*padding: 6px;*/
             text-align: center
         }
 
@@ -156,7 +137,7 @@
 
 <body>
     <header>
-        <h2>نظام الحضور التجريبي</h2>
+        <h2>نظام الحضور اليومي - مدرسة المانع الثانوية 2025-2026</h2>
         <div><strong> <a href="index.html">الرئيسية</a></strong></div>
     </header>
 
@@ -223,14 +204,14 @@
         <div>المعلم: <span id="t-name"></span> — الصف: <span id="t-class"></span> — التاريخ: <span id="today"></span>
         </div>
         <div>الحصة الحالية: <strong id="current-period"></strong></div>
-        <div style="margin-top:8px;">
+        <div style="margin-top:2px;">
             <table id="students-table">
                 <thead>
                     <tr>
                         <th>اسم الطالب</th>
                         <th>حالة الحصة الحالية</th>
+                        <th>تسجيل</th>
                         <th>ملاحظات</th>
-                        <th>أفعال</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -308,10 +289,12 @@
             students.forEach((s, si) => {
                 const tr = document.createElement('tr'); const tdName = document.createElement('td'); tdName.textContent = s; tr.appendChild(tdName);
                 const tdState = document.createElement('td'); const state = DATA.attendance[dateKey][cls].periods[currentPeriodIndex] ? DATA.attendance[dateKey][cls].periods[currentPeriodIndex][si] : 'غير مُسجّل'; tdState.textContent = state || 'غير مُسجّل'; if (state === 'حاضر') tdState.className = 'present'; if (state === 'غائب') tdState.className = 'absent'; tr.appendChild(tdState);
-                const tdNote = document.createElement('td'); const ta = document.createElement('textarea'); ta.value = (DATA.attendance[dateKey][cls].notes && DATA.attendance[dateKey][cls].notes[s]) || ''; ta.onchange = () => { DATA.attendance[dateKey][cls].notes[s] = ta.value; saveData(); }; tdNote.appendChild(ta); tr.appendChild(tdNote);
                 const tdAct = document.createElement('td'); const btnP = document.createElement('button'); btnP.textContent = 'حاضر'; btnP.onclick = () => { setAttendanceForStudent(dateKey, cls, currentPeriodIndex, si, 'حاضر'); renderTeacherTable(teacher, cls); };
+
                 const btnA = document.createElement('button'); btnA.textContent = 'غائب'; btnA.onclick = () => { setAttendanceForStudent(dateKey, cls, currentPeriodIndex, si, 'غائب'); renderTeacherTable(teacher, cls); };
                 tdAct.appendChild(btnP); tdAct.appendChild(btnA); tr.appendChild(tdAct);
+                const tdNote = document.createElement('td'); const ta = document.createElement('textarea'); ta.value = (DATA.attendance[dateKey][cls].notes && DATA.attendance[dateKey][cls].notes[s]) || ''; ta.onchange = () => { DATA.attendance[dateKey][cls].notes[s] = ta.value; saveData(); }; tdNote.appendChild(ta); tr.appendChild(tdNote);
+
                 tbody.appendChild(tr);
             });
         }
