@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;700&display=swap" rel="stylesheet">
+    <title>نظام حضور تجريبي</title>
+    <style>
+        :root {
+            --bg: #f4f6fb;
+            --card: #fff;
+            --accent: #0b74ff;
+            --muted: #6b7280
+        }
+
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background: var(--bg);
+            margin: 0;
+            padding: 20px;
+            color: #0b1a2b;
+            direction: rtl
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center
+        }
+
+        .card {
+            background: #fff;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
+            margin-bottom: 12px
+        }
+
+        input,
+        select,
+        button,
+        textarea {
+            padding: 8px;
+            margin: 6px 0;
+            width: 25%;
+            box-sizing: border-box;
+            border-radius: 8px;
+            border: 1px solid #e6e9ef;
+            cursor: pointer;
+
+        }
+
+        .row {
+            display: flex;
+            flex-direction: column;
+            /* عمودي */
+            gap: 20px;
+            /* مسافة بين العناصر */
+            width: 100%;
+            max-width: 400px;
+            /* ضبط عرض مناسب */
+            margin: auto;
+            /* توسيط */
+        }
+
+        .row .col {
+            background: #f8f8f8;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 0 5px #ccc;
+        }
+
+        .row {
+            display: flex;
+            flex-direction: column;
+            /* عمودي دائمًا */
+            gap: 20px;
+            /* مسافة بين الأقسام */
+            width: 100%;
+            max-width: 450px;
+            /* عرض مناسب للشاشة */
+            margin: 20px auto;
+            /* توسيط الصفحة */
+        }
+
+        .row .col {
+            background: #f2f2f2;
+            padding: 18px;
+            border-radius: 12px;
+            box-shadow: 0 0 8px rgba(0, 0, 0, 0.15);
+            text-align: center;
+        }
+
+        .row .col h4 {
+            margin-bottom: 12px;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 8px;
+            border: 1px solid #aaa;
+            font-size: 16px;
+        }
+
+        button {
+            background: #aaa;
+            color: #fff;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse
+        }
+
+        td,
+        th {
+            border: 1px solid #eee;
+            padding: 6px;
+            text-align: center
+        }
+
+        .present {
+            background: #e6ffea
+        }
+
+        .absent {
+            background: #ffe6e6
+        }
+
+        .controls {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap
+        }
+
+        .gap {
+            border-collapse: collapse;
+            margin-top: 8px;
+
+        }
+    </style>
+    <!-- SheetJS for Excel export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+
+<body>
+    <header>
+        <h2>نظام الحضور التجريبي</h2>
+        <div>ملف التصدير الافتراضي: <strong>Att2526.xlsx</strong></div>
+    </header>
+
+    <div class="card" id="auth">
+        <h3>تسجيل الدخول</h3>
+        <div class="row">
+            <div class="col">
+                <h4>Admin</h4>
+                <input id="admin-pass" placeholder="كلمة مرور Admin" type="password">
+                <button onclick="loginAdmin()">دخول Admin</button>
+            </div>
+            <div class="col">
+                <h4>Staff</h4>
+                <input id="staff-pass" placeholder="كلمة مرور Staff" type="password">
+                <button onclick="loginStaff()">دخول Staff</button>
+            </div>
+            <div class="col">
+                <h4>Teacher (بدون كلمة مرور)</h4>
+                <select id="teacher-select"></select>
+                <select id="teacher-class-select"></select>
+                <button onclick="loginTeacher()">دخول Teacher</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="admin-panel" class="card" style="display:none">
+        <h3>لوحة Admin</h3>
+        <div class="row">
+            <div class="col">
+                <h4>إدارة المستخدمين</h4>
+                <input id="new-user-name" placeholder="اسم المستخدم (teacher/staff/admin)">
+                <select id="new-user-role">
+                    <option>teacher</option>
+                    <option>staff</option>
+                    <option>admin</option>
+                </select>
+                <input id="new-user-pass" placeholder="كلمة المرور (لـ admin/staff فقط)">
+                <button onclick="addUser()">إضافة مستخدم</button>
+                <div id="users-list"></div>
+            </div>
+            <div class="col">
+                <h4>إدارة الحصص / التواقيت</h4>
+                <div id="periods-list"></div>
+                <input id="period-name" placeholder="اسم الحصة (مثال: الحصة 1)">
+                <input id="period-start" type="time">
+                <input id="period-end" type="time">
+                <button onclick="addPeriod()">إضافة / تحديث حصة</button>
+            </div>
+        </div>
+
+        <h4>استيراد CSV (قوائم الطلاب/الصفوف/المواد)</h4>
+        <input type="file" id="csvfile" accept=".csv">
+        <div>تنسيق CSV المتوقع: class,studentName,subject1;subject2;...</div>
+        <button onclick="importCSV()">استيراد CSV</button>
+
+        <h4>إدارة الصفوف والمواد</h4>
+        <div id="classes-list"></div>
+    </div>
+
+    <div id="teacher-panel" class="card" style="display:none">
+        <h3>لوحة Teacher</h3>
+        <div>المعلم: <span id="t-name"></span> — الصف: <span id="t-class"></span> — التاريخ: <span id="today"></span>
+        </div>
+        <div>الحصة الحالية: <strong id="current-period"></strong></div>
+        <div style="margin-top:8px;">
+            <table id="students-table">
+                <thead>
+                    <tr>
+                        <th>اسم الطالب</th>
+                        <th>حالة الحصة الحالية</th>
+                        <th>ملاحظات</th>
+                        <th>أفعال</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <div class="controls">
+            <button onclick="markAllPresent()">جميع الحاضرين</button>
+            <button onclick="markAllAbsent()">جميع الغائبين</button>
+            <button onclick="markAbsentForAllPeriods()">اجعل الغياب لكل الحصص اليوم لهذا الصف</button>
+            <button onclick="saveAttendance()">حفظ وتصدير (Att2526.xlsx)</button>
+        </div>
+    </div>
+
+    <div id="staff-panel" class="card" style="display:none">
+        <h3>لوحة Staff</h3>
+        <div>استعراض الحضور المحفوظ (محلياً)</div>
+        <div id="attendance-preview"></div>
+    </div>
+
+    <script>
+        // --- بيانات افتراضية مخزنة محلياً ---
+        const defaultData = {
+            users: [{ name: 'admin', role: 'admin', pass: 'admin123' }, { name: 'staff', role: 'staff', pass: 'staff123' }, { name: 'ahmed', role: 'teacher' }, { name: 'mona', role: 'teacher' }],
+            periods: [{ name: 'الحصة 1', start: '08:00', end: '08:45' }, { name: 'الحصة 2', start: '08:50', end: '09:35' }, { name: 'الحصة 3', start: '09:45', end: '10:30' }, { name: 'الحصة 4', start: '10:35', end: '11:20' }],
+            classes: { 'Grade1': { students: ['علي', 'سارة', 'محمد'], subjects: ['Math'] }, 'Grade2': { students: ['كريم', 'نور'], subjects: ['Science', 'Arabic'] } },
+            teacherSubjects: { 'ahmed': ['Math'], 'mona': ['Science', 'Arabic'] },
+            attendance: {} // structure: attendance[date][class] = {students: [...], periods: [ {status per student} ] , notes: {student: note} }
+        }
+
+        function loadData() {
+            const raw = localStorage.getItem('att_data');
+            if (raw) return JSON.parse(raw);
+            localStorage.setItem('att_data', JSON.stringify(defaultData));
+            return JSON.parse(JSON.stringify(defaultData));
+        }
+        let DATA = loadData();
+
+        function saveData() { localStorage.setItem('att_data', JSON.stringify(DATA)); renderAdmin(); }
+
+        // --- Auth ---
+        function populateTeacherSelect() {
+            const sel = document.getElementById('teacher-select'); sel.innerHTML = '';
+            DATA.users.filter(u => u.role === 'teacher').forEach(t => { const o = document.createElement('option'); o.value = t.name; o.textContent = t.name; sel.appendChild(o) });
+            const cls = document.getElementById('teacher-class-select'); renderClassOptions(cls);
+        }
+        function renderClassOptions(sel) { sel.innerHTML = ''; Object.keys(DATA.classes).forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o) }) }
+
+        function loginAdmin() { const p = document.getElementById('admin-pass').value; const ok = DATA.users.find(u => u.role === 'admin' && u.pass === p); if (ok) { document.getElementById('admin-panel').style.display = 'block'; document.getElementById('auth').style.display = 'none'; renderAdmin(); } else alert('كلمة المرور غير صحيحة'); }
+        function loginStaff() { const p = document.getElementById('staff-pass').value; const ok = DATA.users.find(u => u.role === 'staff' && u.pass === p); if (ok) { document.getElementById('staff-panel').style.display = 'block'; document.getElementById('auth').style.display = 'none'; renderStaff(); } else alert('كلمة المرور غير صحيحة'); }
+        function loginTeacher() { const t = document.getElementById('teacher-select').value; const c = document.getElementById('teacher-class-select').value; if (!t || !c) { alert('اختر المعلم والصف'); return } document.getElementById('auth').style.display = 'none'; document.getElementById('teacher-panel').style.display = 'block'; document.getElementById('t-name').textContent = t; document.getElementById('t-class').textContent = c; document.getElementById('today').textContent = new Date().toLocaleDateString('ar-EG'); renderTeacherTable(t, c); startPeriodClock(); }
+
+        // --- Admin UI ---
+        function renderAdmin() {
+            const ul = document.getElementById('users-list'); ul.innerHTML = ''; DATA.users.forEach((u, i) => { const d = document.createElement('div'); d.textContent = `${u.name} — ${u.role}`; const rem = document.createElement('button'); rem.textContent = 'حذف'; rem.onclick = () => { if (confirm('حذف مستخدم؟')) { DATA.users.splice(i, 1); saveData(); populateTeacherSelect(); } }; d.appendChild(rem); ul.appendChild(d) });
+            const pl = document.getElementById('periods-list'); pl.innerHTML = ''; DATA.periods.forEach((p, i) => { const d = document.createElement('div'); d.innerHTML = `${p.name} : ${p.start} - ${p.end}`; const rem = document.createElement('button'); rem.textContent = 'حذف'; rem.onclick = () => { DATA.periods.splice(i, 1); saveData(); }; d.appendChild(rem); pl.appendChild(d) });
+            const cl = document.getElementById('classes-list'); cl.innerHTML = ''; Object.keys(DATA.classes).forEach(c => { const o = document.createElement('div'); o.innerHTML = `<strong>${c}</strong> — الطلاب: ${DATA.classes[c].students.join(', ')} — المواد: ${DATA.classes[c].subjects.join(', ')}`; const btn = document.createElement('button'); btn.textContent = 'حذف صف'; btn.onclick = () => { if (confirm('حذف الصف؟')) { delete DATA.classes[c]; saveData(); renderAdmin(); populateTeacherSelect(); } }; o.appendChild(btn); cl.appendChild(o); })
+        }
+        function addUser() { const name = document.getElementById('new-user-name').value.trim(); const role = document.getElementById('new-user-role').value; const pass = document.getElementById('new-user-pass').value; if (!name) return alert('أدخل اسم'); if (DATA.users.find(u => u.name === name)) return alert('موجود مسبقاً'); const u = { name, role }; if (role !== 'teacher') u.pass = pass || '1234'; DATA.users.push(u); saveData(); populateTeacherSelect(); }
+        function addPeriod() { const name = document.getElementById('period-name').value; const s = document.getElementById('period-start').value; const e = document.getElementById('period-end').value; if (!name || !s || !e) return alert('اكمل الحقول'); const idx = DATA.periods.findIndex(p => p.name === name); if (idx >= 0) DATA.periods[idx] = { name, start: s, end: e }; else DATA.periods.push({ name, start: s, end: e }); saveData(); }
+
+        // CSV import: expected rows: class,studentName,subject1;subject2
+        function importCSV() {
+            const f = document.getElementById('csvfile').files[0]; if (!f) return alert('اختر ملف CSV'); const reader = new FileReader(); reader.onload = e => { const txt = e.target.result; const lines = txt.split(/\r?\n/); lines.forEach(line => { if (!line.trim()) return; const parts = line.split(','); const cls = parts[0].trim(); const student = parts[1] ? parts[1].trim() : null; const subjects = parts[2] ? parts[2].split(';').map(s => s.trim()).filter(Boolean) : []; if (!DATA.classes[cls]) DATA.classes[cls] = { students: [], subjects: [] }; if (student && !DATA.classes[cls].students.includes(student)) DATA.classes[cls].students.push(student); subjects.forEach(sub => { if (sub && !DATA.classes[cls].subjects.includes(sub)) DATA.classes[cls].subjects.push(sub) }); }); saveData(); renderAdmin(); alert('تم الاستيراد'); }
+            reader.readAsText(f, 'utf-8');
+        }
+
+        // --- Teacher UI ---
+        function renderTeacherTable(teacher, cls) {
+            document.getElementById('t-name').textContent = teacher; document.getElementById('t-class').textContent = cls;
+            const tbody = document.querySelector('#students-table tbody'); tbody.innerHTML = ''; const students = DATA.classes[cls].students || [];
+            const dateKey = getDateKey(); ensureAttendanceStructure(dateKey, cls, students);
+            const currentPeriodIndex = getCurrentPeriodIndex();
+            const periodName = currentPeriodIndex >= 0 ? DATA.periods[currentPeriodIndex].name : 'لا توجد حصة حالياً';
+            document.getElementById('current-period').textContent = periodName;
+            students.forEach((s, si) => {
+                const tr = document.createElement('tr'); const tdName = document.createElement('td'); tdName.textContent = s; tr.appendChild(tdName);
+                const tdState = document.createElement('td'); const state = DATA.attendance[dateKey][cls].periods[currentPeriodIndex] ? DATA.attendance[dateKey][cls].periods[currentPeriodIndex][si] : 'غير مُسجّل'; tdState.textContent = state || 'غير مُسجّل'; if (state === 'حاضر') tdState.className = 'present'; if (state === 'غائب') tdState.className = 'absent'; tr.appendChild(tdState);
+                const tdNote = document.createElement('td'); const ta = document.createElement('textarea'); ta.value = (DATA.attendance[dateKey][cls].notes && DATA.attendance[dateKey][cls].notes[s]) || ''; ta.onchange = () => { DATA.attendance[dateKey][cls].notes[s] = ta.value; saveData(); }; tdNote.appendChild(ta); tr.appendChild(tdNote);
+                const tdAct = document.createElement('td'); const btnP = document.createElement('button'); btnP.textContent = 'حاضر'; btnP.onclick = () => { setAttendanceForStudent(dateKey, cls, currentPeriodIndex, si, 'حاضر'); renderTeacherTable(teacher, cls); };
+                const btnA = document.createElement('button'); btnA.textContent = 'غائب'; btnA.onclick = () => { setAttendanceForStudent(dateKey, cls, currentPeriodIndex, si, 'غائب'); renderTeacherTable(teacher, cls); };
+                tdAct.appendChild(btnP); tdAct.appendChild(btnA); tr.appendChild(tdAct);
+                tbody.appendChild(tr);
+            });
+        }
+
+        function ensureAttendanceStructure(dateKey, cls, students) {
+            if (!DATA.attendance[dateKey]) DATA.attendance[dateKey] = {}; if (!DATA.attendance[dateKey][cls]) {
+                DATA.attendance[dateKey][cls] = { students: [...students], periods: [], notes: {} }; // initialize periods
+                for (let i = 0; i < DATA.periods.length; i++) { DATA.attendance[dateKey][cls].periods[i] = Array(students.length).fill(''); }
+                saveData();
+            }
+        }
+
+        function setAttendanceForStudent(dateKey, cls, periodIndex, studentIndex, val) { ensureAttendanceStructure(dateKey, cls, DATA.classes[cls].students); DATA.attendance[dateKey][cls].periods[periodIndex][studentIndex] = val; saveData(); }
+
+        function markAllPresent() { const cls = document.getElementById('t-class').textContent; const teacher = document.getElementById('t-name').textContent; const dateKey = getDateKey(); const p = getCurrentPeriodIndex(); if (p < 0) return alert('لا توجد حصة حالية'); ensureAttendanceStructure(dateKey, cls, DATA.classes[cls].students); DATA.attendance[dateKey][cls].periods[p] = DATA.classes[cls].students.map(() => 'حاضر'); saveData(); renderTeacherTable(teacher, cls); }
+        function markAllAbsent() { const cls = document.getElementById('t-class').textContent; const teacher = document.getElementById('t-name').textContent; const dateKey = getDateKey(); const p = getCurrentPeriodIndex(); if (p < 0) return alert('لا توجد حصة حالية'); ensureAttendanceStructure(dateKey, cls, DATA.classes[cls].students); DATA.attendance[dateKey][cls].periods[p] = DATA.classes[cls].students.map(() => 'غائب'); saveData(); renderTeacherTable(teacher, cls); }
+        function markAbsentForAllPeriods() { const cls = document.getElementById('t-class').textContent; const dateKey = getDateKey(); ensureAttendanceStructure(dateKey, cls, DATA.classes[cls].students); for (let pi = 0; pi < DATA.periods.length; pi++) { DATA.attendance[dateKey][cls].periods[pi] = DATA.classes[cls].students.map(() => 'غائب'); } saveData(); renderTeacherTable(document.getElementById('t-name').textContent, cls); }
+
+        function saveAttendance() { // export workbook with sheets per class for today's date
+            const dateKey = getDateKey(); const wb = XLSX.utils.book_new(); const classes = Object.keys(DATA.classes);
+            classes.forEach(cls => {
+                if (!DATA.attendance[dateKey] || !DATA.attendance[dateKey][cls]) { // create empty structure
+                    ensureAttendanceStructure(dateKey, cls, DATA.classes[cls].students);
+                }
+                const att = DATA.attendance[dateKey][cls];
+                // Build sheet: first row -> Date - Class
+                const ws_data = [];
+                ws_data.push([`التاريخ: ${dateKey}`, `الصف: ${cls}`]);
+                // second row: headers
+                const headers = ['اسم الطالب', ...DATA.periods.map(p => p.name)];
+                ws_data.push(headers);
+                // student rows
+                for (let si = 0; si < att.students.length; si++) {
+                    const row = [att.students[si]];
+                    for (let pi = 0; pi < DATA.periods.length; pi++) {
+                        row.push(att.periods[pi] && att.periods[pi][si] ? att.periods[pi][si] : '');
+                    }
+                    ws_data.push(row);
+                }
+                const ws = XLSX.utils.aoa_to_sheet(ws_data);
+                XLSX.utils.book_append_sheet(wb, ws, `${dateKey}_${cls}`);
+            });
+            const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+            const fname = 'Att2526.xlsx';
+            saveAsFile(new Blob([wbout], { type: 'application/octet-stream' }), fname);
+            alert('تم إنشاء الملف: ' + fname + ' (تحميل تلقائي)');
+        }
+
+        function saveAsFile(blob, filename) { const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
+
+        // --- Staff UI ---
+        function renderStaff() {
+            const pv = document.getElementById('attendance-preview');
+            pv.innerHTML = '';
+
+            const dateKey = getDateKey();
+            const monthKey = dateKey.slice(0, 7);
+
+            // Daily stats
+            const dailyDiv = document.createElement('div');
+            dailyDiv.innerHTML = `<h4>الإحصائيات اليومية (${dateKey})</h4>`;
+            dailyDiv.appendChild(buildStatsTable(dateKey));
+            pv.appendChild(dailyDiv);
+
+            // Monthly stats
+            const monthlyDiv = document.createElement('div');
+            monthlyDiv.innerHTML = `<h4>الإحصائيات الشهرية (${monthKey})</h4>`;
+            monthlyDiv.appendChild(buildMonthlyStatsTable(monthKey));
+            pv.appendChild(monthlyDiv);
+
+            // Raw attendance preview
+            Object.keys(DATA.attendance).forEach(date => {
+                Object.keys(DATA.attendance[date]).forEach(cls => {
+                    const div = document.createElement('div');
+                    div.innerHTML = `<strong>${date} — ${cls}</strong> <button onclick="previewSheet('${date}','${cls}')">عرض</button>`;
+                    pv.appendChild(div);
+                })
+            });
+
+            const exportBtn = document.createElement('button');
+            exportBtn.textContent = `تصدير اليوم (${dateKey})`;
+            exportBtn.onclick = () => exportDailyExcel(dateKey);
+            pv.appendChild(exportBtn);
+        }
+
+        function buildStatsTable(dateKey) {
+            const tbl = document.createElement('table');
+            tbl.innerHTML = `<tr><th>الصف</th><th>عدد الطلاب</th><th>حاضرون</th><th>غائبون</th></tr>`;
+            if (DATA.attendance[dateKey]) {
+                Object.keys(DATA.attendance[dateKey]).forEach(cls => {
+                    const att = DATA.attendance[dateKey][cls];
+                    let present = 0, absent = 0;
+                    att.periods.forEach(period => {
+                        period.forEach(state => {
+                            if (state === 'حاضر') present++;
+                            if (state === 'غائب') absent++;
+                        })
+                    });
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${cls}</td><td>${att.students.length}</td><td>${present}</td><td>${absent}</td>`;
+                    tbl.appendChild(tr);
+                });
+            }
+            return tbl;
+        }
+
+        function buildMonthlyStatsTable(monthKey) {
+            const tbl = document.createElement('table');
+            tbl.innerHTML = `<tr><th>الصف</th><th>مجموع الحصص</th><th>حاضر</th><th>غائب</th></tr>`;
+
+            const monthData = Object.keys(DATA.attendance)
+                .filter(d => d.startsWith(monthKey));
+
+            const stats = {};
+            monthData.forEach(date => {
+                Object.keys(DATA.attendance[date]).forEach(cls => {
+                    if (!stats[cls]) stats[cls] = { present: 0, absent: 0, cnt: 0 };
+                    const att = DATA.attendance[date][cls];
+                    att.periods.forEach(period => {
+                        period.forEach(state => {
+                            if (state === 'حاضر') stats[cls].present++;
+                            if (state === 'غائب') stats[cls].absent++;
+                            stats[cls].cnt++;
+                        })
+                    });
+                });
+            });
+
+            Object.keys(stats).forEach(cls => {
+                const s = stats[cls];
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${cls}</td><td>${s.cnt}</td><td>${s.present}</td><td>${s.absent}</td>`;
+                tbl.appendChild(tr);
+            });
+
+            return tbl;
+        }
+
+        function exportDailyExcel(dateKey) {
+            const wb = XLSX.utils.book_new();
+            const classes = Object.keys(DATA.classes);
+            classes.forEach(cls => {
+                if (!DATA.attendance[dateKey] || !DATA.attendance[dateKey][cls]) return;
+                const att = DATA.attendance[dateKey][cls];
+                const ws_data = [];
+                ws_data.push([`التاريخ: ${dateKey}`, `الصف: ${cls}`]);
+                const headers = ['اسم الطالب', ...DATA.periods.map(p => p.name)];
+                ws_data.push(headers);
+                for (let si = 0; si < att.students.length; si++) {
+                    const row = [att.students[si]];
+                    for (let pi = 0; pi < DATA.periods.length; pi++) {
+                        row.push(att.periods[pi][si] || '');
+                    }
+                    ws_data.push(row);
+                }
+
+                const ws = XLSX.utils.aoa_to_sheet(ws_data);
+
+                // Formatting
+                ws['!cols'] = [{ wch: 20 }, ...DATA.periods.map(() => ({ wch: 12 }))];
+
+                XLSX.utils.book_append_sheet(wb, ws, cls);
+            });
+
+            const fileName = `Attendance_${dateKey}.xlsx`;
+            const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+            saveAsFile(new Blob([wbout], { type: 'application/octet-stream' }), fileName);
+        }
+
+        // --- Helpers ---
+        function getDateKey() { const d = new Date(); return d.toISOString().slice(0, 10); }
+        function getCurrentPeriodIndex() {
+            const now = new Date(); const hh = (t) => { const [a, b] = t.split(':'); return parseInt(a) * 60 + parseInt(b); }
+            const m = now.getHours() * 60 + now.getMinutes(); for (let i = 0; i < DATA.periods.length; i++) { const p = DATA.periods[i]; if (!p.start || !p.end) continue; if (m >= hh(p.start) && m <= hh(p.end)) return i; } return -1;
+        }
+
+        function startPeriodClock() { document.getElementById('today').textContent = new Date().toLocaleDateString('ar-EG'); setInterval(() => { const cls = document.getElementById('t-class').textContent; const t = document.getElementById('t-name').textContent; if (cls && t) renderTeacherTable(t, cls); }, 15000); }
+
+        // --- Init ---
+        populateTeacherSelect(); renderAdmin();
+    </script>
+</body>
+
+</html>
